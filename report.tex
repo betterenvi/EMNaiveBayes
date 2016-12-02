@@ -1,0 +1,41 @@
+%-*- coding: UTF-8 -*-
+\documentclass[UTF8]{ctexart}
+% 使得打字机粗体可以被使\textbf{}用。
+\usepackage{lmodern}
+\usepackage{amsmath}
+% 产生 originauth.tex 里的 \square。
+\usepackage{amssymb}
+\DeclareMathOperator*{\argmax}{argmax}
+% 提供 Verbatim 环境和 \VerbatimInput 命令。
+\usepackage{fancyvrb}
+\title{机器学习第三次作业报告}
+\author{张歇}
+\date{\today}
+
+\bibliographystyle{plain}
+
+\begin{document}
+\maketitle
+
+推导
+
+假定共有$M$个特征，第$j$个特征有$q_j$个可能的取值，共有$K$个类。对于单个样本数据$\boldsymbol{x}=(x^{(1)}, x^{(2)}, \cdots, x^{(M)})^T$，由贝叶斯公式有$$
+\hat{y} = f(\boldsymbol{x}) = \mathop{\argmax}_y {P(y|\boldsymbol{x})} = \mathop{\argmax}_y {P(\boldsymbol{x}|y) P(y)},
+$$
+再由条件独立性假设，有$$
+\hat{y} = f(\boldsymbol{x}) = \mathop{\argmax}_y {P(y) \prod\limits_{j=1}^{M} P(x^{(j)}|y)}
+$$
+
+现有观测数据$\boldsymbol{X} = (\boldsymbol{x_1}, \boldsymbol{x_2}, \cdots, \boldsymbol{x_N})^T$，$N$是样本个数。完全数据是$$
+(u_{i}^{(1,1)}, u_{i}^{(1,2)}, \cdots, u_{i}^{(1,q_1)}, u_{i}^{(2,1)}, u_{i}^{(2,2)}, \cdots, u_{i}^{(2,q_2)}, \cdots, u_{i}^{(M,1)}, u_{i}^{(M,2)}, \cdots, u_{i}^{(M,q_M)}, \\ v_{i1}, v_{i2}, \cdots, v_{iK}), i = 1, 2, \cdots, N
+$$
+
+\begin{align}
+\label{def:nCommit}
+nCommit(prj) &= \vert \{cmt \in allCommits(prj): T_1 \leq commitAt(cmt, prj) \textless T_3\} \vert
+\end{align}
+
+%\section{X}
+%\section{但是}
+
+\end{document}
