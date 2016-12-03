@@ -76,8 +76,8 @@ class EMNaiveBayes(object):
         E(v_{ik}) = P(y_k | x_i, \theta^{(t)})
         P(y_k) = \frac{\Sigma_{i=1}^{N} E(v_{ik})}{N}
         P(a_{jl} | y_k) = \frac{\Sigma_{i=1}^{N} E(v_{ik}) * u_i^{(j, l)}}{\Sigma_{i=1}^{N} E(v_{ik})}
-        u_i^{j, l} = 1, if the ith sample's jth feafure took the lth value of the feature
-                     0, otherwise
+        u_i^{(j, l)} =  1, if the ith sample's jth feafure took the lth value of the feature
+                        0, otherwise
         '''
         self.num_iter += 1
         self.pyk_old = copy.deepcopy(self.pyk)
@@ -126,6 +126,7 @@ class EMNaiveBayes(object):
         return self
 
 if __name__ == '__main__':
+    # toy data as an example. For more, please go to main.py
     X, K = np.array([['A', 'B', 'A'], ['B', 'A', 'A'], ['B', 'A', 'C']]), 2
     m = EMNaiveBayes(epsilon=1e-5)
     m.fit(X, K)
