@@ -26,7 +26,7 @@ class EMNaiveBayes(object):
         return self
 
     def _init_theta(self, random_state=0):
-        self.theta_dim = K + K * sum(self.nq)
+        self.theta_dim = self.K + self.K * sum(self.nq)
         if random_state == None:
             return self._init_theta_uniform()
         elif random_state < 0:
@@ -50,7 +50,7 @@ class EMNaiveBayes(object):
         return self
 
     def _init_theta_uniform(self):
-        self.pyk = np.ones(K) / K
+        self.pyk = np.ones(self.K) / self.K
         self.A = list()
         for j in range(self.M):
             # A[j][k, l] means: for the kth class, the jth feature' value is the lth value of the feature. i.e. P(a_jl | y_k)
@@ -59,7 +59,7 @@ class EMNaiveBayes(object):
         return self
 
     def _init_theta_uniform_plus_normal(self):
-        tmp = np.ones(K) / K + np.random.randn(K)
+        tmp = np.ones(self.K) / self.K + np.random.randn(self.K)
         self.pyk = tmp / tmp.sum()
         self.A = list()
         for j in range(self.M):
