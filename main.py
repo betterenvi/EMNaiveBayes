@@ -15,5 +15,3 @@ X.drop(0, axis=1, inplace=True)
 
 emnb = EMNaiveBayes(epsilon=1e-5)
 emnb.fit(X.values, K)
-
-

@@ -14,8 +14,9 @@ class EMNaiveBayes(object):
         self.q = [sorted(list(set(X[:, j]))) for j in range(self.M)]
         self.nq = np.array([len(v) for v in self.q])
         self.q2number = [Series(range(self.nq[j]), index=self.q[j]) for j in range(self.M)]
-        self.X_number = np.array([self.q2number[j][self.X[:, j]] for j in range(self.M)]).T # some kind of onehot encoding. Use natural numbers instead of {0, 1}
-        #self.X_onehot = pd.get_dummies(DataFrame(self.X)) # ok?
+        # self.X_number is some kind of onehot encoding. Use natural numbers instead of {0, 1}
+        self.X_number = np.array([self.q2number[j][self.X[:, j]] for j in range(self.M)]).T
+        # self.X_onehot = pd.get_dummies(DataFrame(self.X)) # ok?
         self.X_onehot = np.zeros((self.N, sum(self.nq)))
         col_idx = 0
         for j in range(self.M):
@@ -28,10 +29,17 @@ class EMNaiveBayes(object):
         self.theta_dim = K + K * sum(self.nq)
         if random_state == None:
             return self._init_theta_uniform()
+        elif random_state < 0:
+            return self._init_theta_uniform_plus_normal()
         else:
             return self._init_theta_random(random_state)
 
     def _init_theta_random(self, random_state):
+        '''
+        \theta = (pyk, A)
+        pyk is a 1d array, and A is a list of 2d array
+        A[j][k, l] means: for the kth class, the jth feature' value is the lth value of the feature. i.e. P(a_jl | y_k)
+        '''
         eps = 1e-2
         tmp = np.random.rand(self.K) + eps
         self.pyk = tmp / tmp.sum()
@@ -44,14 +52,32 @@ class EMNaiveBayes(object):
     def _init_theta_uniform(self):
         self.pyk = np.ones(K) / K
         self.A = list()
-        for j in range(self.M): # A[j][k, l] means: for the kth class, the jth feature' value is the lth value of the feature. i.e. P(a_jl | y_k)
+        for j in range(self.M):
+            # A[j][k, l] means: for the kth class, the jth feature' value is the lth value of the feature. i.e. P(a_jl | y_k)
             pj = pd.value_counts(self.X_number[:, j]).sort_index() / float(self.N)
             self.A.append(np.array([copy.deepcopy(pj) for _ in range(self.K)]))
         return self
 
+    def _init_theta_uniform_plus_normal(self):
+        tmp = np.ones(K) / K + np.random.randn(K)
+        self.pyk = tmp / tmp.sum()
+        self.A = list()
+        for j in range(self.M):
+            # A[j][k, l] means: for the kth class, the jth feature' value is the lth value of the feature. i.e. P(a_jl | y_k)
+            pj = pd.value_counts(self.X_number[:, j]).sort_index() / float(self.N)
+            tmp = np.array([copy.deepcopy(pj) for _ in range(self.K)])
+            tmp += np.random.randn(self.K, self.nq[j])
+            tmp = (tmp.T / tmp.sum(axis=1)).T # normalize
+            self.A.append(tmp)
+        return self
+
     def _iterate(self):
         '''
-        Ev_ik = P(y_k | x_i, \theta^{(t)}) / Z_i
+        E(v_{ik}) = P(y_k | x_i, \theta^{(t)})
+        P(y_k) = \frac{\Sigma_{i=1}^{N} E(v_{ik})}{N}
+        P(a_{jl} | y_k) = \frac{\Sigma_{i=1}^{N} E(v_{ik}) * u_i^{(j, l)}}{\Sigma_{i=1}^{N} E(v_{ik})}
+        u_i^{j, l} = 1, if the ith sample's jth feafure took the lth value of the feature
+                     0, otherwise
         '''
         self.num_iter += 1
         self.pyk_old = copy.deepcopy(self.pyk)
@@ -76,6 +102,9 @@ class EMNaiveBayes(object):
         return self
 
     def _is_convergent(self):
+        '''
+        check if || \theta - \theta_old || < \epsilon
+        '''
         delta = np.zeros(self.theta_dim)
         delta[:self.K] = self.pyk - self.pyk_old
         delta_idx = self.K
@@ -90,7 +119,7 @@ class EMNaiveBayes(object):
     def fit(self, X, K, max_iter=100):
         self._init_params(X, K)
         self._init_theta()
-        for i in range(max_iter):
+        for t in range(max_iter):
             self._iterate()
             if self._is_convergent():
                 break
@@ -99,5 +128,4 @@ class EMNaiveBayes(object):
 if __name__ == '__main__':
     X, K = np.array([['A', 'B', 'A'], ['B', 'A', 'A'], ['B', 'A', 'C']]), 2
     m = EMNaiveBayes(epsilon=1e-5)
-    self = m
     m.fit(X, K)
