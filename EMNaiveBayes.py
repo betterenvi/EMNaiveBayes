@@ -117,12 +117,12 @@ class EMNaiveBayes(object):
         sq_delta = (delta ** 2).sum()
         return sq_delta < self.epsilon
 
-    def calc_overall_feature_entropy(self):
+    def _calc_overall_feature_entropy(self):
         tmp = self.X_onehot.sum(axis=0).astype(float) / self.N
         self.overall_feature_entropy = 0 - (tmp * np.log(np.where(tmp == 0, 1, tmp))).sum()
         return self
 
-    def calc_clustered_feature_entropy(self):
+    def _calc_clustered_feature_entropy(self):
         '''
         '''
         tmp = 0
@@ -131,7 +131,7 @@ class EMNaiveBayes(object):
         self.clustered_feature_entropy = tmp
         return self
 
-    def calc_ground_feature_entropy(self, Y):
+    def _calc_ground_feature_entropy(self, Y):
         self.Y_g = Y
         self.yk_g = sorted(list(set(Y)))
         self.y2number_g = Series(range(len(self.yk_g)), index=self.yk_g)
@@ -148,6 +148,16 @@ class EMNaiveBayes(object):
         self.ground_feature_entropy = tmp
         return self
 
+    def _print_evaluation(self):
+        print '''Feature Entropy:\n
+        Overall:\t%.4f\n
+        Ground: \t%.4f\n
+        Clustered:\t%.4f\n''' % (
+            self.overall_feature_entropy,
+            self.ground_feature_entropy,
+            self.clustered_feature_entropy)
+        return self
+
     def fit(self, X, K, max_iter=100):
         self._init_params(X, K)
         self._init_theta()
@@ -158,9 +168,11 @@ class EMNaiveBayes(object):
         return self
 
     def evaluate(self, Y):
-        self.calc_overall_feature_entropy()
-        self.calc_ground_feature_entropy(Y)
-        self.calc_clustered_feature_entropy()
+        self._calc_overall_feature_entropy()
+        self._calc_ground_feature_entropy(Y)
+        self._calc_clustered_feature_entropy()
+        self._print_evaluation()
+        return self
 
 if __name__ == '__main__':
     # toy data as an example. For more, please go to main.py
