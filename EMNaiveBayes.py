@@ -118,12 +118,19 @@ class EMNaiveBayes(object):
         return sq_delta < self.epsilon
 
     def _calc_overall_feature_entropy(self):
+        '''
+        overall feature entropy
+        \Sigma_{j=1}^M \Sigma_{l=1}^{nq_j} - \frac{ \Sigma_{i=1}^N u_i^{(j, l)} }{N} * log( \frac{ \Sigma_{i=1}^N u_i^{(j, l)} }{N} )
+        '''
         tmp = self.X_onehot.sum(axis=0).astype(float) / self.N
         self.overall_feature_entropy = 0 - (tmp * np.log(np.where(tmp == 0, 1, tmp))).sum()
         return self
 
     def _calc_clustered_feature_entropy(self):
         '''
+        clustered feature entropy
+        partition the samples into K classes, calculate overall feature entropy for each class
+        and then calculate weighted sum of these entropy
         '''
         tmp = 0
         for j in range(self.M):
@@ -132,6 +139,10 @@ class EMNaiveBayes(object):
         return self
 
     def _calc_ground_feature_entropy(self, Y):
+        '''
+        ground feature entropy
+        same as clustered feature entropy, except the partition is done by ground truth
+        '''
         self.Y_g = Y
         self.yk_g = sorted(list(set(Y)))
         self.y2number_g = Series(range(len(self.yk_g)), index=self.yk_g)
