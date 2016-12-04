@@ -141,7 +141,7 @@ class EMNaiveBayes(object):
     def _calc_ground_feature_entropy(self, Y):
         '''
         ground feature entropy
-        same as clustered feature entropy, except the partition is done by ground truth
+        same as clustered feature entropy, except that the partition is done by using ground truth Y
         '''
         self.Y_g = Y
         self.yk_g = sorted(list(set(Y)))
@@ -168,6 +168,26 @@ class EMNaiveBayes(object):
             self.ground_feature_entropy,
             self.clustered_feature_entropy)
         return self
+
+    def _correspondence_analysis(self):
+        try:
+            import mca
+        except Exception, e:
+            print e
+            return
+        # clustered class
+        self.Y = self.Ev.argmax(axis=1)
+        self.yk = range(self.K)
+        self.Y_onehot = np.zeros((self.N, self.K))
+        self.y2number = Series(range(len(self.yk)), index=self.yk)
+        self.Y_number = np.array(self.y2number[self.Y])
+        self.Y_onehot = np.zeros((self.N, self.K))
+        for k in range(self.K):
+            self.Y_onehot[:, k] = (self.Y_number == k).astype(int)
+
+        self.count = DataFrame(self.Y_onehot.T.dot(self.Y_onehot_g))
+        self.ca = mca.mca(self.count)
+
 
     def fit(self, X, K, max_iter=100):
         self._init_params(X, K)
