@@ -38,7 +38,8 @@ class EMNaiveBayes(object):
         '''
         \theta = (pyk, A)
         pyk is a 1d array, and A is a list of 2d array
-        A[j][k, l] means: for the kth class, the jth feature' value is the lth value of the feature. i.e. P(a_jl | y_k)
+        A[j][k, l] means: for the kth class, the probability that the jth feature' value is the lth value of the feature.
+                        i.e. P(a_jl | y_k)
         '''
         eps = 1e-2
         tmp = np.random.rand(self.K) + eps
@@ -53,7 +54,7 @@ class EMNaiveBayes(object):
         self.pyk = np.ones(self.K) / self.K
         self.A = list()
         for j in range(self.M):
-            # A[j][k, l] means: for the kth class, the jth feature' value is the lth value of the feature. i.e. P(a_jl | y_k)
+            # A[j][k, l] = P(a_jl | y_k)
             pj = pd.value_counts(self.X_number[:, j]).sort_index() / float(self.N)
             self.A.append(np.array([copy.deepcopy(pj) for _ in range(self.K)]))
         return self
@@ -63,7 +64,7 @@ class EMNaiveBayes(object):
         self.pyk = tmp / tmp.sum()
         self.A = list()
         for j in range(self.M):
-            # A[j][k, l] means: for the kth class, the jth feature' value is the lth value of the feature. i.e. P(a_jl | y_k)
+            # A[j][k, l] = P(a_jl | y_k)
             pj = pd.value_counts(self.X_number[:, j]).sort_index() / float(self.N)
             tmp = np.array([copy.deepcopy(pj) for _ in range(self.K)])
             tmp += np.random.randn(self.K, self.nq[j])
@@ -116,6 +117,37 @@ class EMNaiveBayes(object):
         sq_delta = (delta ** 2).sum()
         return sq_delta < self.epsilon
 
+    def calc_overall_feature_entropy(self):
+        tmp = self.X_onehot.sum(axis=0).astype(float) / self.N
+        self.overall_feature_entropy = 0 - (tmp * np.log(np.where(tmp == 0, 1, tmp))).sum()
+        return self
+
+    def calc_clustered_feature_entropy(self):
+        '''
+        '''
+        tmp = 0
+        for j in range(self.M):
+            tmp -= (self.pyk * (self.A[j] * np.log(np.where(self.A[j] == 0, 1, self.A[j]))).T).sum()
+        self.clustered_feature_entropy = tmp
+        return self
+
+    def calc_ground_feature_entropy(self, Y):
+        self.Y_g = Y
+        self.yk_g = sorted(list(set(Y)))
+        self.y2number_g = Series(range(len(self.yk_g)), index=self.yk_g)
+        self.Y_number_g = np.array(self.y2number_g[Y])
+        self.Y_onehot_g = np.zeros((self.N, self.K))
+        for k in range(self.K):
+            self.Y_onehot_g[:, k] = (self.Y_number_g == k).astype(int)
+        self.nk_g = np.array(pd.value_counts(self.Y_number_g).sort_index())
+        self.pyk_g = self.nk_g / float(self.N)
+        tmp = 0
+        for k in range(self.K):
+            p_ajl_yk = (self.X_onehot.T * self.Y_onehot_g[:, k]).sum(axis=1) / float(self.nk_g[k])
+            tmp -= self.pyk_g[k] * (p_ajl_yk * np.log(np.where(p_ajl_yk == 0, 1, p_ajl_yk))).sum()
+        self.ground_feature_entropy = tmp
+        return self
+
     def fit(self, X, K, max_iter=100):
         self._init_params(X, K)
         self._init_theta()
@@ -125,8 +157,16 @@ class EMNaiveBayes(object):
                 break
         return self
 
+    def evaluate(self, Y):
+        self.calc_overall_feature_entropy()
+        self.calc_ground_feature_entropy(Y)
+        self.calc_clustered_feature_entropy()
+
 if __name__ == '__main__':
     # toy data as an example. For more, please go to main.py
-    X, K = np.array([['A', 'B', 'A'], ['B', 'A', 'A'], ['B', 'A', 'C']]), 2
+    X = np.array([['A', 'B', 'A'], ['B', 'A', 'A'], ['B', 'A', 'C']])
+    Y = np.array(['P', 'Q', 'P'])
+    K = len(set(Y))
     m = EMNaiveBayes(epsilon=1e-5)
     m.fit(X, K)
+    m.evaluate(Y)
