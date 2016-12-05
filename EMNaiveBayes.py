@@ -48,7 +48,7 @@ class EMNaiveBayes(object):
         '''
         \theta = (pyk, A)
         pyk is a 1d array, and A is a list of 2d array
-        A[j][k, l] means: for the kth class, the probability that the jth feature' value is the lth value of the feature.
+        A[j][k, l] means: for the kth class, the probability that the jth feature's value is the lth value of the feature.
                         i.e. P(a_jl | y_k)
         '''
         eps = 1e-2
@@ -221,14 +221,16 @@ class EMNaiveBayes(object):
         from sklearn.ensemble import RandomForestClassifier
         from sklearn.svm import SVC
         X_onehot_c = np.concatenate((self.X_onehot, self.Y_onehot_p), axis=1)
+        X_onehot_Ev_c = np.concatenate((self.X_onehot, self.Ev), axis=1)
         self.accuracy_g, self.accuracy_p, self.accuracy_c = dict(), dict(), dict()
-        for model_name in ['BernoulliNB', 'RandomForestClassifier', 'SVC']:
+        for model_name, flag in zip(['BernoulliNB', 'RandomForestClassifier', 'SVC'], ['winall', 'prob', 'prob']):
             self.accuracy_g[model_name] = self._calc_model_accuracy(eval(model_name + '()'), self.X_onehot, self.Y_g)
-            self.accuracy_p[model_name] = self._calc_model_accuracy(eval(model_name + '()'), self.Y_onehot_p, self.Y_g)
-            self.accuracy_c[model_name] = self._calc_model_accuracy(eval(model_name + '()'), X_onehot_c, self.Y_g)
+            self.accuracy_p[model_name] = self._calc_model_accuracy(eval(model_name + '()'), self.Y_onehot_p if flag == 'winall' else self.Ev, self.Y_g)
+            self.accuracy_c[model_name] = self._calc_model_accuracy(eval(model_name + '()'), X_onehot_c if flag == 'winall' else X_onehot_Ev_c, self.Y_g)
         return self
 
     def _print_evaluation(self):
+        print 'Number of iterations: %d' % self.num_iter
         print '''Feature Entropy:\n
         Overall:\t%.4f\n
         Ground: \t%.4f\n
@@ -242,7 +244,7 @@ class EMNaiveBayes(object):
         print 'Combined:\n', self.accuracy_c
         return self
 
-    def fit(self, X, K, max_iter=100):
+    def fit(self, X, K, max_iter=500):
         self._init_params(X, K)
         self._init_theta()
         for t in range(max_iter):
