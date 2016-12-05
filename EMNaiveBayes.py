@@ -6,6 +6,13 @@ from sklearn.cross_validation import train_test_split
 from sklearn import metrics
 
 class EMNaiveBayes(object):
+    '''
+    Implementation of Unsupervised Naive Bayes with EM Algorithm.
+    Some evaluation approaches are also implemented:
+    - Feature Entropy
+    - Correspondence Analysis
+    - Accuracy Improvement
+    '''
     def __init__(self, epsilon=1e-5):
         self.epsilon = epsilon
 
@@ -53,6 +60,9 @@ class EMNaiveBayes(object):
         return self # return self. enables chain call
 
     def _init_theta_uniform(self):
+        '''
+        This initilation does not work, since the theta will not change after one iteration.
+        '''
         self.pyk = np.ones(self.K) / self.K
         self.A = list()
         for j in range(self.M):
