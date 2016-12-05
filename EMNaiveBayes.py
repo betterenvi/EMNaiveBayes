@@ -2,6 +2,7 @@ import sys, os, collections, copy
 import numpy as np
 import pandas as pd
 from pandas import DataFrame, Series
+import sklearn
 from sklearn.cross_validation import train_test_split
 from sklearn import metrics
 
@@ -61,7 +62,7 @@ class EMNaiveBayes(object):
 
     def _init_theta_uniform(self):
         '''
-        This initilation does not work, since the theta will not change after one iteration.
+        This initialization does not work, since the theta will not change after one iteration.
         '''
         self.pyk = np.ones(self.K) / self.K
         self.A = list()
@@ -219,12 +220,12 @@ class EMNaiveBayes(object):
         from sklearn.naive_bayes import BernoulliNB
         from sklearn.ensemble import RandomForestClassifier
         from sklearn.svm import SVC
-        X_onehot_p = np.concatenate((self.X_onehot, self.Y_onehot_p), axis=1)
+        X_onehot_c = np.concatenate((self.X_onehot, self.Y_onehot_p), axis=1)
         self.accuracy_g, self.accuracy_p, self.accuracy_c = dict(), dict(), dict()
         for model_name in ['BernoulliNB', 'RandomForestClassifier', 'SVC']:
             self.accuracy_g[model_name] = self._calc_model_accuracy(eval(model_name + '()'), self.X_onehot, self.Y_g)
             self.accuracy_p[model_name] = self._calc_model_accuracy(eval(model_name + '()'), self.Y_onehot_p, self.Y_g)
-            self.accuracy_c[model_name] = self._calc_model_accuracy(eval(model_name + '()'), X_onehot_p, self.Y_g)
+            self.accuracy_c[model_name] = self._calc_model_accuracy(eval(model_name + '()'), X_onehot_c, self.Y_g)
         return self
 
     def _print_evaluation(self):
