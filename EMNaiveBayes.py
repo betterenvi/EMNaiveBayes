@@ -119,6 +119,32 @@ class EMNaiveBayes(object):
         sq_delta = (delta ** 2).sum()
         return sq_delta < self.epsilon
 
+    def _get_encoding(self, Y):
+        N, K = len(Y), len(set(Y))
+        yk = sorted(list(set(Y)))
+        y2number = Series(range(len(yk)), index=yk)
+        Y_number = np.array(y2number[Y])
+        Y_onehot = np.zeros((N, K))
+        for k in range(K):
+            Y_onehot[:, k] = (Y_number == k).astype(int)
+        nk = np.array(pd.value_counts(Y_number).sort_index())
+        pyk = nk / float(N)
+        res = {}
+        for key in ['Y', 'N', 'K', 'yk', 'y2number', 'Y_number', 'Y_onehot', 'nk', 'pyk']:
+            res[key] = eval(key)
+        return res
+
+    def _init_evaluation(self, Y):
+        # ground
+        res = self._get_encoding(Y)
+        for key in res:
+            setattr(self, key + '_g', res[key])
+        # clustered
+        res = self._get_encoding(self.Ev.argmax(axis=1))
+        for key in res:
+            setattr(self, key + '_p', res[key])
+        return self
+
     def _calc_overall_feature_entropy(self):
         '''
         overall feature entropy
@@ -140,51 +166,16 @@ class EMNaiveBayes(object):
         self.clustered_feature_entropy = tmp
         return self
 
-    def _get_encoding(self, Y):
-        N, K = len(Y), len(set(Y))
-        yk = sorted(list(set(Y)))
-        y2number = Series(range(len(yk)), index=yk)
-        Y_number = np.array(y2number[Y])
-        Y_onehot = np.zeros((N, K))
-        for k in range(K):
-            Y_onehot[:, k] = (Y_number == k).astype(int)
-        nk = np.array(pd.value_counts(Y_number).sort_index())
-        pyk = nk / float(N)
-        res = {}
-        for key in ['Y', 'N', 'yk', 'y2number', 'Y_number', 'Y_onehot', 'nk', 'pyk']:
-            res[key] = eval(key)
-        return res
-
-    def _init_evaluation(self, Y):
-        res = self._get_encoding(Y)
-        for key in res:
-            setattr(self, key + '_g', res[key])
-        return self
-
     def _calc_ground_feature_entropy(self):
         '''
         ground feature entropy
         same as clustered feature entropy, except that the partition is done by using ground truth Y
         '''
         tmp = 0
-        for k in range(self.K):
+        for k in range(self.K_g):
             p_ajl_yk = (self.X_onehot.T * self.Y_onehot_g[:, k]).sum(axis=1) / float(self.nk_g[k])
             tmp -= self.pyk_g[k] * (p_ajl_yk * np.log(np.where(p_ajl_yk == 0, 1, p_ajl_yk))).sum()
         self.ground_feature_entropy = tmp
-        return self
-
-    def _print_evaluation(self):
-        print '''Feature Entropy:\n
-        Overall:\t%.4f\n
-        Ground: \t%.4f\n
-        Clustered:\t%.4f\n''' % (
-            self.overall_feature_entropy,
-            self.ground_feature_entropy,
-            self.clustered_feature_entropy)
-        print '\naccuracy'
-        print 'Ground:\n', self.accuracy_g
-        print 'Clustered:\n', self.accuracy_p
-        print 'Combined:\n', self.accuracy_c
         return self
 
     def _correspondence_analysis(self):
@@ -192,13 +183,8 @@ class EMNaiveBayes(object):
             import mca
         except Exception, e:
             print e
-            return
-        # clustered class
-        res = self._get_encoding(self.Ev.argmax(axis=1))
-        for key in res:
-            setattr(self, key + '_p', res[key])
-
-        self.count = DataFrame(self.Y_onehot_g.T.dot(self.Y_onehot_g), columns=self.yk_g)
+            return self
+        self.count = DataFrame(self.Y_onehot_p.T.dot(self.Y_onehot_g), columns=self.yk_g)
         self.freq = self.count.values / float(self.count.values.sum())
         self.Dn = np.diag(self.freq.sum(axis=1))
         self.Dp = np.diag(self.freq.sum(axis=0))
@@ -229,6 +215,20 @@ class EMNaiveBayes(object):
             self.accuracy_g[model_name] = self._calc_model_accuracy(eval(model_name + '()'), self.X_onehot, self.Y_g)
             self.accuracy_p[model_name] = self._calc_model_accuracy(eval(model_name + '()'), self.Y_onehot_p, self.Y_g)
             self.accuracy_c[model_name] = self._calc_model_accuracy(eval(model_name + '()'), X_onehot_p, self.Y_g)
+        return self
+
+    def _print_evaluation(self):
+        print '''Feature Entropy:\n
+        Overall:\t%.4f\n
+        Ground: \t%.4f\n
+        Clustered:\t%.4f\n''' % (
+            self.overall_feature_entropy,
+            self.ground_feature_entropy,
+            self.clustered_feature_entropy)
+        print '\naccuracy'
+        print 'Ground:\n', self.accuracy_g
+        print 'Clustered:\n', self.accuracy_p
+        print 'Combined:\n', self.accuracy_c
         return self
 
     def fit(self, X, K, max_iter=100):
