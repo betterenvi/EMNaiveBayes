@@ -230,7 +230,7 @@ class EMNaiveBayes(object):
         return self
 
     def _print_evaluation(self):
-        print 'Number of iterations: %d' % self.num_iter
+        print '\nNumber of iterations: %d\n' % self.num_iter
         print '''Feature Entropy:\n
         Overall:\t%.4f\n
         Ground: \t%.4f\n
@@ -238,7 +238,7 @@ class EMNaiveBayes(object):
             self.overall_feature_entropy,
             self.ground_feature_entropy,
             self.clustered_feature_entropy)
-        print '\naccuracy'
+        print '\nAccuracy'
         print 'Ground:\n', self.accuracy_g
         print 'Clustered:\n', self.accuracy_p
         print 'Combined:\n', self.accuracy_c
