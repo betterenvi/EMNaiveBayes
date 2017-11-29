@@ -69,7 +69,7 @@ class EMNaiveBayes(object):
         self.A = list()
         for j in range(self.M):
             tmp = np.random.rand(self.K, self.nq[j]) + eps
-            self.A.append((tmp.T / tmp.sum(axis=1)).T)
+            self.A.append(tmp / tmp.sum(axis=1, keepdims=True))
 
     def _iterate(self):
         """
@@ -90,11 +90,11 @@ class EMNaiveBayes(object):
             Ev *= (self.A[j][:, self.X_number[:, j]]).T
 
         Ev *= self.pyk
-        self.Ev = (Ev.T / Ev.sum(axis=1).astype(float)).T   # normalize
+        self.Ev = Ev / Ev.sum(axis=1, keepdims=True)
 
         # Update theta.
-        Ev_k = self.Ev.sum(axis=0).astype(float)
-        self.pyk = Ev_k / float(self.N)
+        Ev_k = self.Ev.sum(axis=0)
+        self.pyk = Ev_k / self.N
         EvT = self.Ev.T
         col_idx = 0
         for j in range(self.M):
